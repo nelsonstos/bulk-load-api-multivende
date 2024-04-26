@@ -1,0 +1,26 @@
+{
+  "name": "ecom",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "node.js",
+    "express.js",
+    "RabbitMQ",
+    "Docker",
+    "Prisma",
+    "MySQL",
+    "API",
+    "ecommerce",
+    "Git"
+  ],
+  "author": "Willy N. Santos",
+  "license": "MIT",
+  "dependencies": {
+    "amqplib": "^0.10.4",
+    "express": "^4.19.2"
+  }
+}
