@@ -1,0 +1,59 @@
+const amqp = require('amqplib');
+
+const QUEUE_NAME = 'productos';
+const NUM_CHANNELS = 10; // Número de canales para procesar los mensajes
+
+// Conectar a RabbitMQ y comenzar a escuchar los mensajes
+async function connectAndSubscribe() {
+  try {
+    const connection = await amqp.connect('amqp://localhost:5672');
+    const channel = await connection.createChannel();
+    await channel.assertQueue(QUEUE_NAME);
+    console.log('Suscriptor conectado a RabbitMQ');
+
+    // Crear múltiples canales para procesar los mensajes
+    const channels = [];
+    for (let i = 0; i < NUM_CHANNELS; i++) {
+      const subChannel = await connection.createChannel();
+      await subChannel.assertQueue(QUEUE_NAME);
+      channels.push(subChannel);
+    }
+
+    // Consumir mensajes en los canales
+    channels.forEach(subChannel => {
+      subChannel.consume(QUEUE_NAME, async (message) => {
+        if (message !== null) {
+          const products = message.content.toString().split('\n').map(JSON.parse);
+          console.log('Lote de productos recibido:', products);
+
+          // Lógica para procesar los productos en el lote
+          //await procesarProductos(products);
+
+          // Confirmar el mensaje para eliminarlo de la cola
+          subChannel.ack(message);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Error al conectar a RabbitMQ:', error);
+  }
+}
+
+// Función para procesar los productos en un lote
+async function procesarProductos(products) {
+  try {
+    // Simular un retraso de procesamiento
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Lógica para procesar los productos en el lote
+    products.forEach(product => {
+      console.log('Producto procesado:', product);
+    });
+  } catch (error) {
+    console.error('Error al procesar los productos:', error);
+    throw error;
+  }
+}
+
+// Iniciar el suscriptor
+connectAndSubscribe();
