@@ -11,7 +11,7 @@ class RabbitMQClient {
             const channel = await connection.createChannel();
             await channel.assertQueue(process.env.QUEUE_NAME);
 
-            return channel
+            return { connection, channel }
 
         }
         catch (error) {

@@ -2,7 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const router = require('./src/routes/routes');
+const router = require('./routes/routes');
 dotenv.config();
 
 
@@ -25,7 +25,7 @@ app.use(cors(corsOptions));
 
 // Simple routes
 app.get("/", (req, res) => {
-    res.json({ message: "Welcome to IgeniaLabs API." });
+    res.json({ message: "Welcome to ECOM API." });
   });
 
 // Routes

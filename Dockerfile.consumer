@@ -1,0 +1,20 @@
+# Usa una imagen base adecuada para Node.js
+FROM node:18
+
+# Establece el directorio de trabajo dentro del contenedor
+WORKDIR /app
+
+# Copia el package.json y package-lock.json (o yarn.lock) para instalar las dependencias
+COPY package.json package-lock.json /app/
+
+# Instala las dependencias
+RUN npm install
+
+# Copia el resto de los archivos de la aplicación
+COPY . /app/
+
+# Expone el puerto en el que el consumidor escucha los mensajes
+EXPOSE 3000
+
+# Comando para ejecutar el consumidor
+CMD ["node", "consumer.js"]

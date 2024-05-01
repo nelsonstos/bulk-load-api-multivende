@@ -1,27 +1,56 @@
 const casual = require('casual');
 const { v4: uuidv4 } = require('uuid');
 
-const RabbitMQClient = require("../config/rabbitMQ");
+const RabbitMQClient = require("../../config/rabbitMQ");
 //const ProductRepository = require("../repositories/product.repository");
 const Generate = require('../utils/generate.utils');
 const dotenv = require('dotenv');
+const MultivendeClient = require('../../clients/multivende.client');
 
 
 dotenv.config();
+
+
 
 class  ProductService  {
 
     constructor() {
         this.rabbitMQClient = new RabbitMQClient();
         this.generateName = new Generate();
+        this.multivendeClient = new MultivendeClient();
         this.casualName = ""
      
     }
 
     async create(data) {
-        const { name, code, totalProducts, batchSize } = data;
+        const { name, code, authorizationCode, totalProducts, batchSize } = data;
+      
+       /* const client = await this.multivendeClient.generateAccessToken(authorizationCode);
 
-        const channel = await this.rabbitMQClient.connect();
+        console.log("token: ", client.token);
+
+        const info = await this.multivendeClient.getInfo(client.token);
+
+        console.log("MerchantId: ", info.MerchantId);
+
+        const prod = {
+            "name": "Product 0001",
+            "alias": "test product alias",
+            "model": "XX5A",
+            "description": "plain text description",
+            "code": "12344123",
+            "internalCode": "45353453",
+            "shortDescription": "​plain short text description",
+            "htmlDescription": "<h1>​HTML text description</h1>",
+            "htmlShortDescription": "<h1>​​HTML short text description</h1>"
+           };
+
+        const createProduct = await this.multivendeClient.registerProduct(client.token, info.MerchantId, prod);
+
+        console.log("createProduct: ", createProduct.data);*/
+
+
+        const { channel } = await this.rabbitMQClient.connect();
 
         const numBatches = Math.ceil(totalProducts / batchSize);
         try {
@@ -36,6 +65,13 @@ class  ProductService  {
                 for (let j = 0; j < batchSize && (i * batchSize + j) < totalProducts; j++) {
 
                   const product = casual.Product;
+                 /* const data = {
+                    product: product,
+                    authorizationCode: authorizationCode,
+                    clientId: process.env.MULTIVENDE_CLIENT_ID,
+                    clientSecret: process.env.MULTIVENDE_CLIENT_SECRET,
+                    clientGrantType: process.env.MULTIVENDE_GRANT_TYPE,
+                  }*/
                   products.push(product);
                   //const newProduct = await productRepository.create(product);
                   //console.log("producto registrado en base de datos: ", newProduct)
@@ -66,7 +102,6 @@ class  ProductService  {
     
     // Función para generar un producto aleatorio con Casual
     generateProduct(generateName) {
-        // Configuración de casual para que los datos sean más realistas
         casual.seed(123); // Semilla para reproducibilidad
         casual.define('Product', function() {
             return {

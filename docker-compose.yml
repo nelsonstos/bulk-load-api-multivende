@@ -10,3 +10,88 @@ services:
 
 volumes:
   rabbitmq_data:
+
+# version: '3.8'
+
+# services:
+#   api:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile.api
+#     ports:
+#       - "3000:3000"  # Ajusta el puerto según sea necesario
+#     environment:
+#       - NODE_ENV=production  # Configura el entorno de Node.js si es necesario
+#     depends_on:
+#       - rabbitmq
+#       - redis
+#       - mariadb
+#     volumes:
+#       - .:/app
+#       - node_modules:/app/node_modules  # Volumen para los módulos de Node.js
+#     networks:
+#       - mvende
+      
+
+#   consumer:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile.consumer
+#     environment:
+#       - NODE_ENV=production  # Configura el entorno de Node.js si es necesario
+#     depends_on:
+#       - rabbitmq
+#       - redis
+#       - mariadb
+#     volumes:
+#       - .:/app
+#       - node_modules:/app/node_modules  # Volumen para los módulos de Node.js
+#     networks:
+#       - mvende
+      
+
+#   rabbitmq:
+#     image: rabbitmq:3-management
+#     ports:
+#       - "5672:5672"     # Puerto de conexión de RabbitMQ
+#       - "15672:15672"
+#     volumes:
+#       - ./rabbitmq/data:/var/lib/rabbitmq   # Puerto de la interfaz de usuario web de RabbitMQ
+#     networks:
+#       - mvende
+      
+
+#   redis:
+#     image: redis:latest
+#     ports:
+#       - "6379:6379"     # Puerto de conexión de Redis
+#     environment:
+#       - REDIS_PASSWORD=mvende001  # Configura la contraseña de Redis según sea necesario
+#     volumes:
+#       - ./redis/data:/data  # Volumen para los datos de Redis
+#     networks:
+#       - mvende
+      
+
+#   mariadb:
+#     image: mariadb:latest
+#     ports:
+#       - "3306:3306"     # Puerto de conexión de MariaDB
+#     environment:
+#       MYSQL_ROOT_PASSWORD: root   # Configura la contraseña de root de MariaDB según sea necesario
+#       MYSQL_DATABASE: mvende            # Configura la base de datos de MariaDB según sea necesario
+#       MYSQL_USER: mvende                    # Configura el usuario de MariaDB según sea necesario
+#       MYSQL_PASSWORD: mvende001           # Configura la contraseña del usuario de MariaDB según sea necesario
+#     volumes:
+#       - ./mariadb/data:/var/lib/mysql  # Volumen para los datos de MariaDB
+#     networks:
+#       - mvende
+      
+# networks:
+#   mvende:
+#     driver: bridge
+
+# volumes:
+#   rabbitmq_data:
+#   node_modules:
+
