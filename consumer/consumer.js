@@ -1,9 +1,11 @@
 const dotenv = require('dotenv');
 dotenv.config({ path: './../.env' });
+const moment = require('moment');
 
 const MultivendeClient = require("../clients/multivende.client");
 const RabbitMQClient = require("../config/rabbitMQ");
 const ProductRepository = require('../api/repositories/product.repository');
+const LogbookRepository = require('../api/repositories/logbook.reporsitory');
 
 const QUEUE_NAME = 'productos';
 const NUM_CHANNELS = 10; // Número de canales para procesar los mensajes
@@ -14,37 +16,26 @@ const RETRY_DELAY = 1000; // Retraso en milisegundos antes de reintentar
 const rabbitMQ = new RabbitMQClient();
 const multivendeClient = new MultivendeClient();
 const productRepository = new ProductRepository();
+const logbookRepository = new LogbookRepository();
 
 let accessToken = '';
-let expiresIn = '';
-let issuedAt = '';
-let code = 'ac-f25cf110-f86d-4fd1-b8a6-57a939d3d9a6'
+let merchantId = '';
+let expiresAt = '';
+let authorizationCode = ''
+let totalProcessed = 0;
+let totalFailed = 0;
+let totalProductsToProcess = 0  
+let logbookId = 0
 
 async function connect() {
   try {
 
-    /*const dataToken = await multivendeClient.generateAccessToken(code);
-    accessToken = dataToken.token;
-    issuedAt = dataToken.createdAt;
-    expiresIn = dataToken.expiresAt;
-    console.log('Access token refreshed:', accessToken);
-
-    const info = await multivendeClient.getInfo(accessToken);
-
-    console.log("MerchantId: ", info.MerchantId);
-
-   /* setInterval(() => {
-        // Esta función se ejecutará cada segundo
-        console.log('Ejecutando tarea repetida...');
-      }, 1000);*/
-
-
-   const { connection } = await rabbitMQ.connect();
+    const { connection } = await rabbitMQ.connect();
     const channels = [];
     for (let i = 0; i < NUM_CHANNELS; i++) {
-      const subChannel = await connection.createChannel();
-      await subChannel.assertQueue(QUEUE_NAME);
-      channels.push(subChannel);
+        const subChannel = await connection.createChannel();
+        await subChannel.assertQueue(QUEUE_NAME);
+        channels.push(subChannel);
     }
 
     channels.forEach(subChannel => {
@@ -52,6 +43,7 @@ async function connect() {
         if (message !== null) {
           let jsonString = message.content.toString().trim();      
           const productos = JSON.parse(jsonString); 
+         
           await processProducts(productos);
           subChannel.ack(message);
         }
@@ -80,35 +72,58 @@ async function processProducts(products) {
 }
 
 async function processBatch(products) {
-  const requests = [];
-  for (const product of products) {
-    requests.push(retryWithBackoff(processProduct, [product], MAX_RETRIES));
-  }
-  await Promise.all(requests);
+
+    totalProcessed += products.length;
+    for (const product of products) {
+        try {
+            await retryWithBackoff(processProduct, [product], MAX_RETRIES);
+        } catch (error) {
+            totalFailed ++;
+            console.error('Error al procesar el producto:', error);
+        }
+    }
+
+    if (totalProductsToProcess === totalProcessed + totalFailed) {
+        await updateLogbook();
+      }
 }
 
 async function processProduct(product) {
-  // Simular una petición al servicio externo de Multivende
-  //await new Promise(resolve => setTimeout(resolve, 1000)); // Simulación de 1 segundo de petición
-  // Lógica de procesamiento del producto
-  //const resp = await multivendeClient.registerProduct(accessToken, merchantId, product);
-  const resp = await productRepository.create(product);
-  console.log('Producto procesado:', resp);
+  try {
+    // Lógica de procesamiento del producto
+
+    if((authorizationCode === '' && accessToken === '') || isTokenExpired(expiresAt)) {
+        logbookId = product.logbookId;
+        await refreshAccessToken();
+        
+    }
+
+    const respMulti = await multivendeClient.registerProduct(accessToken, merchantId, buildProduct(product));
+
+    product.status = respMulti.status
+    const resp = await productRepository.create(product);
+    console.log('Producto procesado:', resp);
+    
+  } catch (error) {
+    throw new Error('Error al procesar el producto: ' + error.message);
+  }
+
+ 
 }
 
 async function retryWithBackoff(func, args, maxRetries) {
   let retries = 0;
   while (retries < maxRetries) {
-    try {
+   try {
       await func(...args); // Llamamos a la función con los argumentos desempaquetados
       return;
-    } catch (error) {
+   } catch (error) {
       retries++;
       console.log(`Reintentando... (Intento ${retries}/${maxRetries})`);
       if (retries === maxRetries) {
         throw new Error(`Máximo número de reintentos (${maxRetries}) alcanzado.`);
       }
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retries));
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
     }
   }
 }
@@ -121,5 +136,64 @@ function chunkArray(array, size) {
   }
   return chunkedArr;
 }
+
+function buildProduct(product) {
+  const request = {
+    "name": product.name,
+    "alias": product.alias,
+    "model": product.model,
+    "description": product.description,
+    "code": product.code,
+    "internalCode": product.internalCode,
+    "shortDescription": product.shortDescription,
+    "htmlDescription": product.htmlDescription,
+    "htmlShortDescription": product.htmlShortDescription
+  };
+  return request;
+}
+
+async function updateLogbook() {
+    const now = moment();
+    const endDate  = now.toDate();
+    try {
+      const logbookDetails = {
+        where: {
+            id: logbookId,
+        },
+        data: {
+            status: "COMPLETED",
+            totalRecorded: totalFailed,
+            endDate: endDate,
+        }
+      };
+      await logbookRepository.update(logbookDetails);
+      console.log('Detalles registrados en el logbook:', logbookDetails);
+    } catch (error) {
+      console.error('Error al registrar en el logbook:', error);
+    }
+  }
+
+  // Función para verificar si el token ha expirado
+function isTokenExpired(expiresAt) {
+    const expirationDate = moment(expiresAt);
+    // Comparar con la fecha actual
+    return moment() >= expirationDate;
+  }
+
+  async function refreshAccessToken() {
+    try {
+        const logbook = await logbookRepository.find({id: logbookId});
+        authorizationCode = logbook.authorizationCode;
+        const dataToken = await multivendeClient.generateAccessToken(authorizationCode);
+        console.log("dataToken: ", dataToken);
+        accessToken = dataToken.token;
+        merchantId = dataToken.MerchantId;
+        expiresAt = dataToken.expiresAt;
+        totalProductsToProcess = logbook.total;
+      console.log('Se ha actualizado el token:', accessToken);
+    } catch (error) {
+      console.error('Error al actualizar el token:', error);
+    }
+  }
 
 connect();

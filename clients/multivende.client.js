@@ -72,6 +72,8 @@ class MultivendeClient {
   }
 
   async registerProduct(accessToken, merchantId, productData) {
+    console.log("accessToken: ", accessToken);
+    console.log("merchantId: ", merchantId);
     try {
       const response = await this.instance.post( `/api/m/${merchantId}/products`, productData, {
         headers: {

@@ -14,18 +14,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model logbook {
+  id Int @id @default(autoincrement())
+  name String
+  description String?
+  status String?
+  observations String?
+  total Int
+  totalRecorded Int?
+  authorizationCode String
+  endDate DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  products products[]
+
+ }
+
 model products {
     id String @id
     name String
-    alias String
+    alias String?
     model String
-    description String
+    description String?
     code String
     internalCode String
     shortDescription String
     htmlDescription String
     htmlShortDescription String
-    created_at DateTime @default(now())
-    updated_at DateTime @updatedAt
+    logbookId Int
+    status String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    logbook logbook @relation( fields: [logbookId], references: [id])
 }
+
+
 
