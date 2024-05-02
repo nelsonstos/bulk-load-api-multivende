@@ -16,6 +16,7 @@ class RabbitMQClient {
         }
         catch (error) {
             console.error('Error al conectar a RabbitMQ:', error);
+            return error;
         }
 
     }

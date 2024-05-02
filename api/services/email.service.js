@@ -11,14 +11,17 @@ class EmailService {
 
             const data = fs.readFileSync('./resources/emails.json', 'utf8');
             let emails = JSON.parse(data);
+            let message = null;
             if(type === 'validos') {
                 emails = emails.filter(email => validator.validate(email));
-            }
-            if(type === 'sinPersona') {
+            } else if(type === 'sinPersona') {
                 emails =  emails.filter(email => !validator.validate(email) && regexSinPersona.test(email));
-            }
-            if(type === 'noValidos'){
+            } else if(type === 'noValidos'){
                 emails = emails.filter(email => !regexNotEmail.test(email) && !regexSinPersona.test(email));
+            } else {
+                message = 'Tipo de validación no válido';
+                console.error(message);
+                return message ;
             }
 
             return emails;

@@ -1,17 +1,22 @@
+const { StatusCodes } = require("http-status-codes");
 const productService = require("../services/product.service");
+const resp = require("../utils/response.utils");
 
  class ProductController {
 
     async create(req, res) {
       try {
          const { name, authorizationCode,  totalProducts, batchSize } = req.body;
-         const newProduct = await productService.create({ name, authorizationCode, totalProducts, batchSize });
-         res.status(201).json(newProduct);
+
+         const product = await productService.create({ name, authorizationCode, totalProducts, batchSize });
+         const response = resp.response(StatusCodes.OK, {product}, "Mass registration of products has been executed successfully!")
+         res.status(StatusCodes.CREATED).json(response);
       } catch (error) {
-          console.error('Error al crear el producto:', error);
+         const response = resp.response(StatusCodes.INTERNAL_SERVER_ERROR, null, 'An error occurred while creating the product');
+         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(response);
           throw error;
       }
-    }
+   }
  }
 
  module.exports = ProductController;

@@ -7,7 +7,15 @@ class PersonController {
   
     async getPerson(req, res ) {
 
+        const allowedParams = ['noaddress', 'order', 'age', 'startsWith'];
         const { noaddress, order, age, startsWith } = req.query;
+
+        // Verificar si todos los parámetros están permitidos
+        const isValidParams = Object.keys(req.query).every(param => allowedParams.includes(param));
+
+        if (!isValidParams) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ error: 'Parámetros no permitidos' });
+        }
 
         try {  
             const persons = personService.getPersonWithoutAddress(noaddress, order, age, startsWith);
