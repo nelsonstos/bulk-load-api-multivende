@@ -24,7 +24,7 @@ Multivende es un sistema de ventas en línea que busca ofrecer una plataforma ef
 
 ## Ejemplo de API
 ### Productos
-- `POST /api/v1/products`: Registro masivo de productos.
+- `POST /api/v1/products`: Registra masivamente productos, integrada con el publisher de RabbitMQ para una interacción eficiente. En el consumidor /consumers/consumer.js, se encuentra el script y la lógica correspondiente. Este script permite recibir mensajes por lotes, con una implementación que maneja hasta 5 peticiones por segundo y tres intentos de reenvío sin perder el accessToken.
 - Parámetros de la solicitud:
  ```json
   {
