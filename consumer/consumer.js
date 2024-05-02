@@ -26,6 +26,8 @@ let totalProcessed = 0;
 let totalFailed = 0;
 let totalProductsToProcess = 0  
 let logbookId = 0
+let tokenExpiration = null;
+let tokenRefreshed = false;
 
 async function connect() {
   try {
@@ -92,10 +94,10 @@ async function processProduct(product) {
   try {
     // Lógica de procesamiento del producto
 
-    if((authorizationCode === '' && accessToken === '') || isTokenExpired(expiresAt)) {
+    if(!tokenRefreshed && isTokenExpired()) {
         logbookId = product.logbookId;
         await refreshAccessToken();
-        
+        tokenRefreshed = true;
     }
 
     const respMulti = await multivendeClient.registerProduct(accessToken, merchantId, buildProduct(product));
@@ -174,22 +176,23 @@ async function updateLogbook() {
   }
 
   // Función para verificar si el token ha expirado
-function isTokenExpired(expiresAt) {
-    const expirationDate = moment(expiresAt);
-    // Comparar con la fecha actual
-    return moment() >= expirationDate;
-  }
+function isTokenExpired() {
+    if(!tokenExpiration || moment()>= tokenExpiration) {
+      return true; // token expired
+    } else {
+      return false; // token not expired
+    }
+}
 
   async function refreshAccessToken() {
     try {
         const logbook = await logbookRepository.find({id: logbookId});
         authorizationCode = logbook.authorizationCode;
         const dataToken = await multivendeClient.generateAccessToken(authorizationCode);
-        console.log("dataToken: ", dataToken);
         accessToken = dataToken.token;
         merchantId = dataToken.MerchantId;
-        expiresAt = dataToken.expiresAt;
         totalProductsToProcess = logbook.total;
+        tokenExpiration = moment(dataToken.expiresAt);
       console.log('Se ha actualizado el token:', accessToken);
     } catch (error) {
       console.error('Error al actualizar el token:', error);

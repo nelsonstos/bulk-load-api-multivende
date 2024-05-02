@@ -30,33 +30,6 @@ class MultivendeClient {
     }
   }
 
-  isTokenExpired(createdAt, expiresAt) {
-
-    if(createdAt === '' || expiresAt === '') {
-      return false;
-    }
-    // Supongamos que tienes una variable que almacena la fecha de expiración del token en milisegundos
-    const tokenExpirationTime = this.getTokenExpirationTime(createdAt, expiresAt); // Debes implementar esta función
-  
-    // Obtener la fecha y hora actuales en milisegundos
-    const currentTime = Date.now();
-  
-    // Verificar si el token ha expirado comparando la fecha de expiración con la fecha y hora actuales
-    return currentTime >= tokenExpirationTime;
-  }
-
-  getTokenExpirationTime(createdAt, expiresAt) {
-    // Supongamos que el token es un objeto que contiene la fecha de emisión y la duración de validez del token
-    const createdAtt = Date.parse(createdAt); // Fecha de emisión del token en milisegundos
-    const expiresAtn = Date.parse(expiresAt); // Duración de validez del token en segundos
-  
-    // Calcular la fecha de expiración sumando la duración de validez del token a la fecha de emisión
-    const expirationTimeInMilliseconds = createdAtt + (expiresAtn * 1000); // Convertir expiresAt a milisegundos
-  
-    return expirationTimeInMilliseconds;
-  }
-
- 
   async getInfo(accessToken) {
     try {
       const response = await this.instance.get( `/api/d/info`, {
@@ -72,8 +45,6 @@ class MultivendeClient {
   }
 
   async registerProduct(accessToken, merchantId, productData) {
-    console.log("accessToken: ", accessToken);
-    console.log("merchantId: ", merchantId);
     try {
       const response = await this.instance.post( `/api/m/${merchantId}/products`, productData, {
         headers: {
