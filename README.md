@@ -12,6 +12,18 @@ Multivende es un sistema de ventas en línea que busca ofrecer una plataforma ef
 - Sistema de colas: Rabbit MQ
 - Contenedorización: Docker
 
+## Arquitectura Distribuida
+El proyecto está diseñado siguiendo una arquitectura distribuida para garantizar la escalabilidad y eficiencia del sistema. Consiste en varios componentes interconectados que se comunican entre sí para llevar a cabo las diversas funcionalidades ofrecidas por Multivende. Entre los componentes principales se encuentran:
+
+- **Servidor API:** Implementa las diferentes APIs que proporcionan acceso a las funcionalidades del sistema.
+- **Base de Datos MySQL:** Almacena la información de los productos, personas y otros datos relevantes del sistema.
+- **Sistema de Colas RabbitMQ:** Gestiona la comunicación asíncrona entre los distintos servicios del sistema, permitiendo el registro masivo de productos de manera eficiente.
+- **Consumidor de Colas:** Se encarga de procesar los mensajes enviados a través de RabbitMQ, como el registro masivo de productos, garantizando un manejo adecuado de la carga y los reintentos en caso de fallo.
+- **Contenedorización con Docker:** Permite empaquetar y desplegar los diferentes componentes del sistema de manera consistente y reproducible, facilitando la administración y escalabilidad del sistema en entornos de producción.
+
+![alt text](/resources/images/Arquitectura.png)
+
+
 ## Instalación
 1. Clona este repositorio: `git clone https://github.com/nelsonstos/reg-masivo-productoss-multivende.git`
 2. Instala las dependencias: `npm install`
@@ -117,7 +129,7 @@ Multivende es un sistema de ventas en línea que busca ofrecer una plataforma ef
  ```
 ## Otros
 Diseño de un modelo de base de datos entidad-relación del proceso de compras 
-![alt text](image.png)
+![alt text](/resources/images/image.png)
 
 ## Contribución
 Si deseas contribuir a este proyecto, sigue estos pasos:
