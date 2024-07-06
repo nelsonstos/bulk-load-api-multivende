@@ -30,6 +30,23 @@ class MultivendeClient {
     }
   }
 
+  async generateRefreshAccessToken(refreshToken) {
+    try {
+      const request = {
+        client_id: process.env.MULTIVENDE_CLIENT_ID,
+        client_secret: process.env.MULTIVENDE_CLIENT_SECRET,
+        grant_type: "refresh_token",
+        refresh_token: refreshToken
+      }
+      const response = await this.instance.post('/oauth/access-token', request);
+      return response.data
+    } catch (error) {
+      console.error('Error al generar el access token:', error.response?.data ?? error.message);
+      return error.response
+    }
+  }
+
+
   async getInfo(accessToken) {
     try {
       const response = await this.instance.get( `/api/d/info`, {

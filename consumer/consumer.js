@@ -28,6 +28,9 @@ let totalProductsToProcess = 0
 let logbookId = 0
 let tokenExpiration = null;
 let tokenRefreshed = false;
+let refreshToken = null;
+let refreshTokenExpiration = null;
+let isFirstCheck = true;
 
 async function connect() {
   try {
@@ -94,10 +97,12 @@ async function processProduct(product) {
   try {
     // Lógica de procesamiento del producto
 
-    if(!tokenRefreshed && isTokenExpired()) {
-        logbookId = product.logbookId;
-        await refreshAccessToken();
-        tokenRefreshed = true;
+     //await checkAndRefreshToken(product);
+
+     if(!tokenRefreshed || isTokenExpired()) {
+      logbookId = product.logbookId;
+      await refreshAccessToken();
+      tokenRefreshed = true;
     }
 
     const respMulti = await multivendeClient.registerProduct(accessToken, merchantId, buildProduct(product));
@@ -109,8 +114,6 @@ async function processProduct(product) {
   } catch (error) {
     throw new Error('Error al procesar el producto: ' + error.message);
   }
-
- 
 }
 
 async function retryWithBackoff(func, args, maxRetries) {
@@ -184,19 +187,41 @@ function isTokenExpired() {
     }
 }
 
-  async function refreshAccessToken() {
-    try {
-        const logbook = await logbookRepository.find({id: logbookId});
-        authorizationCode = logbook.authorizationCode;
-        const dataToken = await multivendeClient.generateAccessToken(authorizationCode);
-        accessToken = dataToken.token;
-        merchantId = dataToken.MerchantId;
-        totalProductsToProcess = logbook.total;
-        tokenExpiration = moment(dataToken.expiresAt);
-      console.log('Se ha actualizado el token:', accessToken);
-    } catch (error) {
-      console.error('Error al actualizar el token:', error);
+async function refreshAccessToken() {
+  try {
+    const logbook = await logbookRepository.find({ id: logbookId });
+    const authorizationCode = logbook.authorizationCode;
+
+    let dataToken = null;
+    if (!refreshToken) {
+      // Generar un nuevo token de acceso si no hay un token de refresco
+      dataToken = await multivendeClient.generateAccessToken(authorizationCode);
+    } else {
+      // Refrescar el token de acceso utilizando el token de refresco existente
+      dataToken = await multivendeClient.generateRefreshAccessToken(refreshToken);
     }
+
+    // Actualizar los valores del token de acceso, token de refresco y fechas de vencimiento
+    accessToken = dataToken.token;
+    refreshToken = dataToken.refreshToken;
+    tokenExpiration = moment(dataToken.expiresAt);
+    refreshTokenExpiration = moment(dataToken.refreshTokenExpiresAt);
+
+    // Actualizar otras variables necesarias
+    totalProductsToProcess = logbook.total;
+    merchantId = dataToken.MerchantId;
+
+    console.log('Se ha actualizado el token:', accessToken);
+
+    // Si se ha realizado un refresh, actualizar refreshTokenExpiration
+    if (refreshToken !== null) {
+      tokenExpiration = refreshTokenExpiration;
+    }
+  } catch (error) {
+    console.error('Error al actualizar el token:', error);
   }
+}
+
+
 
 connect();

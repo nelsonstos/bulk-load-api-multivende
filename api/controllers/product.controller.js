@@ -9,7 +9,7 @@ const resp = require("../utils/response.utils");
          const { name, authorizationCode,  totalProducts, batchSize } = req.body;
 
          const product = await productService.create({ name, authorizationCode, totalProducts, batchSize });
-         const response = resp.response(StatusCodes.OK, {product}, "Mass registration of products has been executed successfully!")
+         const response = resp.response(StatusCodes.CREATED, {product}, "Mass registration of products has been executed successfully!")
          res.status(StatusCodes.CREATED).json(response);
       } catch (error) {
          const response = resp.response(StatusCodes.INTERNAL_SERVER_ERROR, null, 'An error occurred while creating the product');
